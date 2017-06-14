@@ -1,0 +1,105 @@
+buildscript {
+    ext.kotlin_version = '1.1.2-5'
+    ext.spek_version = '1.1.2'
+    ext.junit_platform_version = '1.0.0-M4'
+
+    dependencies {
+        classpath group: 'org.jetbrains.kotlin', name: 'kotlin-gradle-plugin', version: "$kotlin_version"
+        classpath group: 'org.junit.platform', name: 'junit-platform-gradle-plugin', version: "$junit_platform_version"
+        classpath group: 'com.ofg', name: 'uptodate-gradle-plugin', version: '1.6.3'
+    }
+
+    repositories {
+        jcenter()
+        mavenCentral()
+    }
+}
+
+apply plugin: 'application'
+apply plugin: 'idea'
+apply plugin: 'java'
+apply plugin: 'kotlin'
+apply plugin: 'org.junit.platform.gradle.plugin'
+apply plugin: 'com.ofg.uptodate'
+
+mainClassName = 'com.kraluk.docugen.DocugenApplication'
+
+jar {
+    manifest {
+        attributes "Main-Class": "$mainClassName"
+    }
+
+    from {
+        configurations.compile.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+}
+
+compileKotlin {
+    kotlinOptions.jvmTarget = JavaVersion.VERSION_1_8
+}
+
+junitPlatform {
+    filters {
+        engines {
+            include 'spek'
+        }
+    }
+}
+
+repositories {
+    mavenCentral()
+    jcenter()
+
+    maven { url 'http://dl.bintray.com/jetbrains/spek' }
+
+    mavenLocal()
+}
+
+idea {
+    module {
+        downloadJavadoc = true
+        downloadSources = true
+    }
+}
+
+uptodate {
+    connectionTimeout = 10000
+}
+
+check.dependsOn 'uptodate'
+
+dependencies {
+    compile group: 'org.jetbrains.kotlin', name: 'kotlin-stdlib-jre8', version: "$kotlin_version"
+    compile group: 'org.jetbrains.kotlin', name: 'kotlin-reflect', version: "$kotlin_version"
+
+    compile group: 'org.docx4j', name: 'docx4j', version: '3.3.3'
+
+    // JavaFX
+    compile group: 'no.tornado', name: 'tornadofx', version: '1.7.6'
+    compile group: 'org.controlsfx', name: 'controlsfx', version: '8.40.12'
+
+    // Logger
+    compile group: 'io.github.microutils', name: 'kotlin-logging', version: '1.4.4'
+    compile group: 'org.slf4j', name: 'slf4j-log4j12', version: '1.7.25'
+
+    // Test
+    testCompile group: 'org.jetbrains.spek', name: 'spek-api', version: "$spek_version"
+    testCompile group: 'com.natpryce', name: 'hamkrest', version: '1.4.0.0'
+    testCompile group: 'org.mockito', name: 'mockito-core', version: '2.8.9'
+
+    testRuntime group: 'org.jetbrains.spek', name: 'spek-junit-platform-engine', version: "$spek_version"
+    testRuntime group: 'org.junit.platform', name: 'junit-platform-launcher', version: "$junit_platform_version"
+}
+
+test {
+    testLogging {
+        events 'passed', 'skipped', 'failed'
+        exceptionFormat = 'full'
+    }
+}
+
+tasks.withType(JavaCompile) { options.encoding = 'UTF-8' }
+
+task wrapper(type: Wrapper) {
+    gradleVersion = '4.0'
+}
